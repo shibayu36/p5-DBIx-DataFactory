@@ -36,7 +36,7 @@ sub create_factory_method {
     Sub::Install::install_sub({
         code => sub {
             my (%args) = @_;
-            $class->_factory_method(
+            return $class->_factory_method(
                 dbi            => $dbi,
                 username       => $username,
                 password       => $password,
@@ -90,6 +90,8 @@ sub _factory_method {
     my $dbh = DBI->connect($dbi, $username, $password);
     my $sth = $dbh->prepare($sql);
     $sth->execute(@binds);
+
+    return $values;
 }
 
 1;

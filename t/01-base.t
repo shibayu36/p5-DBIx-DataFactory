@@ -23,4 +23,6 @@ Test::Factory::DBI->create_factory_method(
     },
 );
 
-create_factory();
+my $factory = create_factory();
+use Data::Dumper;
+warn Dumper($factory);
