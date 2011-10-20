@@ -1,4 +1,4 @@
-package Test::Factory::DBI::Random;
+package Test::Factory::DBI::Type;
 
 use strict;
 use warnings;
@@ -10,13 +10,13 @@ use String::Random;
 
 my $type_to_random_sub = {
     'int' => sub {
-        return Test::Factory::DBI::Random->rand_int(@_);
+        return Test::Factory::DBI::Type->rand_int(@_);
     },
     'num' => sub {
-        return Test::Factory::DBI::Random->rand_num(@_);
+        return Test::Factory::DBI::Type->rand_num(@_);
     },
     'str' => sub {
-        return Test::Factory::DBI::Random->rand_str(@_);
+        return Test::Factory::DBI::Type->rand_str(@_);
     },
 };
 

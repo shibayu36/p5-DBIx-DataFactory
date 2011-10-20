@@ -16,7 +16,7 @@ use DBI;
 use SQL::Maker;
 use Sub::Install;
 
-use Test::Factory::DBI::Random;
+use Test::Factory::DBI::Type;
 
 sub create_factory_method {
     args my $class    => 'ClassName',
@@ -25,7 +25,7 @@ sub create_factory_method {
          my $table    => 'Str',
          my $username => {isa => 'Str', optional => 1},
          my $password => {isa => 'Str', optional => 1},
-         my $params   => {isa => 'HashRef', optional => 1};
+         my $columns   => {isa => 'HashRef', optional => 1};
 
     $username = __PACKAGE__->username unless $username;
     $password = __PACKAGE__->password unless $password;
@@ -40,7 +40,7 @@ sub create_factory_method {
     my ($inspector_table) = grep {$_->name eq $table} $inspector->tables;
     croak("cannot find table named $table") unless $inspector_table;
 
-    my $columns = [map {$_->name} $inspector_table->columns];
+    my $table_columns = [map {$_->name} $inspector_table->columns];
 
     my ($package) = caller;
     Sub::Install::install_sub({
@@ -51,8 +51,8 @@ sub create_factory_method {
                 username       => $username,
                 password       => $password,
                 table          => $table,
-                column_names   => $columns,
-                params_default => $params,
+                column_names   => $table_columns,
+                params_default => $columns,
                 params         => \%args,
             );
         },
@@ -84,7 +84,7 @@ sub _factory_method {
 
         # insert default random value
         my $default = $params_default->{$column};
-        my $random = Test::Factory::DBI::Random->random_from_type_info($default);
+        my $random = Test::Factory::DBI::Type->random_from_type_info($default);
         if (defined $random) {
             $values->{$column} = $random;
             next;

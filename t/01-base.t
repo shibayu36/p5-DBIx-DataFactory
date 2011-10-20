@@ -11,7 +11,7 @@ Test::Factory::DBI->create_factory_method(
     method   => 'create_factory',
     dbi      => 'dbi:mysql:dbname=test_factory;host=localhost',
     table    => 'test_factory',
-    params => {
+    columns => {
         int => {
             type => 'Int',
             size => 10,
