@@ -18,6 +18,7 @@ CREATE TABLE test_factory (
   `int` int,
   `double` double,
   `string` varchar(255),
+  `nullable` int DEFAULT NULL,
 
   PRIMARY KEY (id)
 ) DEFAULT CHARSET=binary;

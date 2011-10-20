@@ -4,6 +4,7 @@ use warnings;
 use Test::More tests => 1;
 
 use Test::Factory::DBI;
+use String::Random;
 
 Test::Factory::DBI->username('nobody');
 Test::Factory::DBI->password('nobody');
@@ -20,13 +21,10 @@ Test::Factory::DBI->create_factory_method(
             type => 'Num',
             size => 5,
         },
-        string => {
-            type => 'Str',
-            regexp => '[a-z]{10}',
-        },
+        string => sub {String::Random->new->randregex('[a-z]{100}')},
     },
 );
 
-my $factory = create_factory();
+my $factory = create_factory(nullable => 100);
 use Data::Dumper;
 warn Dumper($factory);

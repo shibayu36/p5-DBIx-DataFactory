@@ -82,10 +82,14 @@ sub _factory_method {
             next;
         }
 
-        # insert default random value
+        # insert setting columns value
         my $default = $params_default->{$column};
-        my $random = Test::Factory::DBI::Type->random_from_type_info($default);
-        if (defined $random) {
+        if (ref $default eq 'CODE') {
+            $values->{$column} = $default->();
+            next;
+        }
+        elsif (ref $default eq 'HASH') {
+            my $random = Test::Factory::DBI::Type->random_from_type_info($default);
             $values->{$column} = $random;
             next;
         }
