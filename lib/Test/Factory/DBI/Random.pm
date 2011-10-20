@@ -4,9 +4,27 @@ use strict;
 use warnings;
 use Carp;
 
-use Test::Factory::DBI::Type;
+use List::MoreUtils qw(any);
 
-use Exporter::Lite;
+my $type_to_random_sub = {
+    'int' => sub {
+        my ($size) = @_;
+        return Test::Factory::DBI::Random->rand_int($size);
+    },
+    'num' => sub {
+        my ($size) = @_;
+        return Test::Factory::DBI::Random->rand_num($size);
+    },
+    'str' => sub {
+        my ($size) = @_;
+    },
+};
+
+sub type_to_random_sub {
+    my ($class, $type) = @_;
+    $type = lc $type;
+    return $type_to_random_sub->{$type};
+}
 
 sub random_from_type_info {
     my ($self, $type_info) = @_;
@@ -15,7 +33,7 @@ sub random_from_type_info {
     my $type = $type_info->{type};
     my $size = $type_info->{size};
 
-    my $code = Test::Factory::DBI::Type->type_to_random_sub($type);
+    my $code = __PACKAGE__->type_to_random_sub($type);
     return undef unless $code;
 
     return $code->($size);
