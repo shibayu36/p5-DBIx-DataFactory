@@ -51,10 +51,11 @@ sub rand_num {
 }
 
 sub rand_str {
-    args my $class => 'ClassName',
-         my $size  => 'Int';
+    args my $class  => 'ClassName',
+         my $size   => {isa => 'Int', optional => 1, default => 20},
+         my $regexp => {isa => 'Str', optional => 1};
 
-    my $regexp = "[a-zA-Z0-9]{$size}";
+    $regexp = "[a-zA-Z0-9]{$size}" unless $regexp;
     return String::Random->new->randregex($regexp);
 }
 

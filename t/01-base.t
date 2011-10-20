@@ -22,7 +22,7 @@ Test::Factory::DBI->create_factory_method(
         },
         string => {
             type => 'Str',
-            size => 255,
+            regexp => '[a-z]{10}',
         },
     },
 );
