@@ -5,18 +5,18 @@ use warnings;
 use Carp;
 
 use List::MoreUtils qw(any);
+use Smart::Args;
+use String::Random;
 
 my $type_to_random_sub = {
     'int' => sub {
-        my ($size) = @_;
-        return Test::Factory::DBI::Random->rand_int($size);
+        return Test::Factory::DBI::Random->rand_int(@_);
     },
     'num' => sub {
-        my ($size) = @_;
-        return Test::Factory::DBI::Random->rand_num($size);
+        return Test::Factory::DBI::Random->rand_num(@_);
     },
     'str' => sub {
-        my ($size) = @_;
+        return Test::Factory::DBI::Random->rand_str(@_);
     },
 };
 
@@ -30,24 +30,32 @@ sub random_from_type_info {
     my ($self, $type_info) = @_;
     return undef unless $type_info;
 
-    my $type = $type_info->{type};
-    my $size = $type_info->{size};
+    my $type = delete $type_info->{type};
 
     my $code = __PACKAGE__->type_to_random_sub($type);
     return undef unless $code;
 
-    return $code->($size);
+    return $code->(%$type_info);
 }
 
 sub rand_int {
-    my ($class, $size) = @_;
-    return int (__PACKAGE__->rand_num($size));
+    my $class = shift;
+    return int ($class->rand_num(@_));
 }
 
 sub rand_num {
-    my ($class, $size) = @_;
+    args my $class => 'ClassName',
+         my $size  => 'Int';
     my $max = 10 ** $size - 1;
     return rand($max);
+}
+
+sub rand_str {
+    args my $class => 'ClassName',
+         my $size  => 'Int';
+
+    my $regexp = "[a-zA-Z0-9]{$size}";
+    return String::Random->new->randregex($regexp);
 }
 
 1;

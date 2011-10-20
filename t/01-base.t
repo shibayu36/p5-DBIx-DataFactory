@@ -19,7 +19,11 @@ Test::Factory::DBI->create_factory_method(
         double => {
             type => 'Num',
             size => 5,
-        }
+        },
+        string => {
+            type => 'Str',
+            size => 255,
+        },
     },
 );
 
