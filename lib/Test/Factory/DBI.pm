@@ -6,6 +6,10 @@ use Carp;
 
 our $VERSION = '0.0.1';
 
+use base qw(Class::Data::Inheritable);
+__PACKAGE__->mk_classdata('username');
+__PACKAGE__->mk_classdata('password');
+
 use Smart::Args;
 use DBIx::Inspector;
 use DBI;
@@ -19,9 +23,15 @@ sub create_factory_method {
          my $method   => 'Str',
          my $dbi      => 'Str',
          my $table    => 'Str',
-         my $username => 'Str',
-         my $password => 'Str',
+         my $username => {isa => 'Str', optional => 1},
+         my $password => {isa => 'Str', optional => 1},
          my $params   => {isa => 'HashRef', optional => 1};
+
+    $username = __PACKAGE__->username unless $username;
+    $password = __PACKAGE__->password unless $password;
+    unless ($username && $password) {
+        croak('username and password for database are both required');
+    }
 
     my $dbh = DBI->connect($dbi, $username, $password);
     my $inspector = DBIx::Inspector->new(dbh => $dbh)

@@ -5,12 +5,12 @@ use Test::More tests => 1;
 
 use Test::Factory::DBI;
 
+Test::Factory::DBI->username('nobody');
+Test::Factory::DBI->password('nobody');
 Test::Factory::DBI->create_factory_method(
     method   => 'create_factory',
     dbi      => 'dbi:mysql:dbname=test_factory;host=localhost',
     table    => 'test_factory',
-    username => 'nobody',
-    password => 'nobody',
     params => {
         int => {
             type => 'Int',
