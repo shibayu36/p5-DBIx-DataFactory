@@ -9,12 +9,18 @@ our $VERSION = '0.0.1';
 use base qw(Class::Data::Inheritable);
 __PACKAGE__->mk_classdata('username');
 __PACKAGE__->mk_classdata('password');
+__PACKAGE__->mk_classdata('defined_types' => {});
+
+__PACKAGE__->add_type('Test::Factory::DBI::Type::Int');
+__PACKAGE__->add_type('Test::Factory::DBI::Type::Num');
+__PACKAGE__->add_type('Test::Factory::DBI::Type::Str');
 
 use Smart::Args;
 use DBIx::Inspector;
 use DBI;
 use SQL::Maker;
 use Sub::Install;
+use Class::Load qw/load_class/;
 
 use Test::Factory::DBI::Type;
 
@@ -63,6 +69,20 @@ sub create_factory_method {
     return;
 }
 
+sub add_type {
+    my ($class, $type) = @_;
+    load_class($type);
+    $class->defined_types->{$type->type_name} = $type;
+}
+
+sub make_value_from_type_info {
+    my ($class, $args) = @_;
+    my $type_name  = delete $args->{type};
+    my $type_class = $class->defined_types->{$type_name}
+        or croak("$type_name is not defined as type");
+    return $type_class->make_value(%$args);
+}
+
 sub _factory_method {
     my ($class, %args) = @_;
     my $dbi            = $args{dbi};
@@ -89,8 +109,8 @@ sub _factory_method {
             next;
         }
         elsif (ref $default eq 'HASH') {
-            my $random = Test::Factory::DBI::Type->random_from_type_info($default);
-            $values->{$column} = $random;
+            my $value = Test::Factory::DBI->make_value_from_type_info($default);
+            $values->{$column} = $value;
             next;
         }
     }

@@ -21,7 +21,10 @@ Test::Factory::DBI->create_factory_method(
             type => 'Num',
             size => 5,
         },
-        string => sub {String::Random->new->randregex('[a-z]{100}')},
+        string => {
+            type => 'Str',
+            size => 50,
+        }
     },
 );
 
