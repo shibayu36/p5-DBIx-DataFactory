@@ -1,7 +1,7 @@
 use Test::More tests => 1;
 
 BEGIN {
-use_ok( 'Test::Factory::DBI' );
+use_ok( 'DBIx::DataFactory' );
 }
 
-diag( "Testing Test::Factory::DBI $Test::Factory::DBI::VERSION" );
+diag( "Testing DBIx::DataFactory $DBIx::DataFactory::VERSION" );

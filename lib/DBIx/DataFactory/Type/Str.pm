@@ -1,10 +1,10 @@
-package Test::Factory::DBI::Type::Str;
+package DBIx::DataFactory::Type::Str;
 
 use strict;
 use warnings;
 use Carp;
 
-use base qw(Test::Factory::DBI::Type);
+use base qw(DBIx::DataFactory::Type);
 
 use Smart::Args;
 use String::Random;

@@ -1,4 +1,4 @@
-package Test::Factory::DBI::Type;
+package DBIx::DataFactory::Type;
 
 use strict;
 use warnings;

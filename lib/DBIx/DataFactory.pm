@@ -1,4 +1,4 @@
-package Test::Factory::DBI;
+package DBIx::DataFactory;
 
 use strict;
 use warnings;
@@ -11,9 +11,9 @@ __PACKAGE__->mk_classdata('username');
 __PACKAGE__->mk_classdata('password');
 __PACKAGE__->mk_classdata('defined_types' => {});
 
-__PACKAGE__->add_type('Test::Factory::DBI::Type::Int');
-__PACKAGE__->add_type('Test::Factory::DBI::Type::Num');
-__PACKAGE__->add_type('Test::Factory::DBI::Type::Str');
+__PACKAGE__->add_type('DBIx::DataFactory::Type::Int');
+__PACKAGE__->add_type('DBIx::DataFactory::Type::Num');
+__PACKAGE__->add_type('DBIx::DataFactory::Type::Str');
 
 use Smart::Args;
 use DBIx::Inspector;
@@ -22,7 +22,7 @@ use SQL::Maker;
 use Sub::Install;
 use Class::Load qw/load_class/;
 
-use Test::Factory::DBI::Type;
+use DBIx::DataFactory::Type;
 
 sub create_factory_method {
     args my $class    => 'ClassName',
@@ -109,7 +109,7 @@ sub _factory_method {
             next;
         }
         elsif (ref $default eq 'HASH') {
-            my $value = Test::Factory::DBI->make_value_from_type_info($default);
+            my $value = DBIx::DataFactory->make_value_from_type_info($default);
             $values->{$column} = $value;
             next;
         }
@@ -134,12 +134,12 @@ __END__
 
 =head1 NAME
 
-Test::Factory::DBI - [One line description of module's purpose here]
+DBIx::DataFactory - [One line description of module's purpose here]
 
 
 =head1 SYNOPSIS
 
-    use Test::Factory::DBI;
+    use DBIx::DataFactory;
 
 =for author to fill in:
     Brief code example(s) here showing commonest usage(s).
