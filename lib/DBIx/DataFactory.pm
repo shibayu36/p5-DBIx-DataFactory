@@ -6,10 +6,11 @@ use Carp;
 
 our $VERSION = '0.0.1';
 
-use base qw(Class::Data::Inheritable);
-__PACKAGE__->mk_classdata('username');
-__PACKAGE__->mk_classdata('password');
+use base qw(Class::Data::Inheritable Class::Accessor::Fast);
 __PACKAGE__->mk_classdata('defined_types' => {});
+__PACKAGE__->mk_accessors(qw(
+    username password dsn
+));
 
 __PACKAGE__->add_type('DBIx::DataFactory::Type::Int');
 __PACKAGE__->add_type('DBIx::DataFactory::Type::Num');
@@ -26,21 +27,22 @@ use Class::Load qw/load_class/;
 use DBIx::DataFactory::Type;
 
 sub create_factory_method {
-    args my $class    => 'ClassName',
+    args my $self,
          my $method   => 'Str',
-         my $dbi      => 'Str',
+         my $dsn      => {isa => 'Str', optional => 1},
          my $table    => 'Str',
          my $username => {isa => 'Str', optional => 1},
          my $password => {isa => 'Str', optional => 1},
-         my $columns   => {isa => 'HashRef', optional => 1};
+         my $auto_inserted_columns   => {isa => 'HashRef', optional => 1};
 
-    $username = __PACKAGE__->username unless $username;
-    $password = __PACKAGE__->password unless $password;
-    unless ($username && $password) {
-        croak('username and password for database are both required');
+    $username = $self->username unless $username;
+    $password = $self->password unless $password;
+    $dsn      = $self->dsn      unless $dsn;
+    unless ($username && $password && $dsn) {
+        croak('username, password and dsn for database are all required');
     }
 
-    my $dbh = DBI->connect($dbi, $username, $password);
+    my $dbh = DBI->connect($dsn, $username, $password);
     my $inspector = DBIx::Inspector->new(dbh => $dbh)
         or croak('cannot connect database');
 
@@ -53,13 +55,13 @@ sub create_factory_method {
     Sub::Install::install_sub({
         code => sub {
             my (%args) = @_;
-            return $class->_factory_method(
-                dbi            => $dbi,
+            return $self->_factory_method(
+                dbi            => $dsn,
                 username       => $username,
                 password       => $password,
                 table          => $table,
                 column_names   => $table_columns,
-                params_default => $columns,
+                params_default => $auto_inserted_columns,
                 params         => \%args,
             );
         },
@@ -85,7 +87,7 @@ sub make_value_from_type_info {
 }
 
 sub _factory_method {
-    my ($class, %args) = @_;
+    my ($self, %args) = @_;
     my $dbi            = $args{dbi};
     my $username       = $args{username};
     my $password       = $args{password};

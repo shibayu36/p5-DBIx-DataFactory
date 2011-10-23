@@ -33,13 +33,15 @@ use String::Random;
 # warn Dumper($factory);
 
 use DBIx::DataFactory;
-DBIx::DataFactory->username('nobody');
-DBIx::DataFactory->password('nobody');
-DBIx::DataFactory->create_factory_method(
+my $factory = DBIx::DataFactory->new({
+    username => 'nobody',
+    password => 'nobody',
+    dsn      => 'dbi:mysql:dbname=test_factory;host=localhost'
+});
+$factory->create_factory_method(
     method   => 'create_factory_data',
-    dbi      => 'dbi:mysql:dbname=test_factory;host=localhost',
     table    => 'test_factory',
-    columns => {
+    auto_inserted_columns => {
         int => {
             type => 'Int',
             size => 10,
