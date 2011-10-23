@@ -33,7 +33,7 @@ sub create_factory_method {
          my $table    => 'Str',
          my $username => {isa => 'Str', optional => 1},
          my $password => {isa => 'Str', optional => 1},
-         my $auto_inserted_columns   => {isa => 'HashRef', optional => 1};
+         my $auto_inserted_columns => {isa => 'HashRef', optional => 1};
 
     $username = $self->username unless $username;
     $password = $self->password unless $password;
@@ -56,7 +56,7 @@ sub create_factory_method {
         code => sub {
             my (%args) = @_;
             return $self->_factory_method(
-                dbi            => $dsn,
+                dsn            => $dsn,
                 username       => $username,
                 password       => $password,
                 table          => $table,
@@ -88,7 +88,7 @@ sub make_value_from_type_info {
 
 sub _factory_method {
     my ($self, %args) = @_;
-    my $dbi            = $args{dbi};
+    my $dsn            = $args{dsn};
     my $username       = $args{username};
     my $password       = $args{password};
     my $table          = $args{table};
@@ -119,12 +119,12 @@ sub _factory_method {
     }
 
     # make sql
-    my ($driver)  = $dbi =~ /^dbi:([^:]+)/;
+    my ($driver)  = $dsn =~ /^dbi:([^:]+)/;
     my $builder = SQL::Maker->new(driver => $driver);
     my ($sql, @binds) = $builder->insert($table, $values);
 
     # insert
-    my $dbh = DBI->connect($dbi, $username, $password);
+    my $dbh = DBI->connect($dsn, $username, $password);
     my $sth = $dbh->prepare($sql);
     $sth->execute(@binds);
 
