@@ -14,6 +14,7 @@ __PACKAGE__->mk_classdata('defined_types' => {});
 __PACKAGE__->add_type('DBIx::DataFactory::Type::Int');
 __PACKAGE__->add_type('DBIx::DataFactory::Type::Num');
 __PACKAGE__->add_type('DBIx::DataFactory::Type::Str');
+__PACKAGE__->add_type('DBIx::DataFactory::Type::Set');
 
 use Smart::Args;
 use DBIx::Inspector;
