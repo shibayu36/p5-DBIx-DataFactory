@@ -38,7 +38,7 @@ sub create_factory_method {
     $username = $self->username unless $username;
     $password = $self->password unless $password;
     $dsn      = $self->dsn      unless $dsn;
-    unless ($username && $password && $dsn) {
+    unless (defined $username && defined $password && defined $dsn) {
         croak('username, password and dsn for database are all required');
     }
 
@@ -78,12 +78,16 @@ sub add_type {
     $class->defined_types->{$type->type_name} = $type;
 }
 
-sub make_value_from_type_info {
+sub _make_value_from_type_info {
     my ($class, $args) = @_;
-    my $type_name  = delete $args->{type};
+
+    my $copy_arg = {};
+    %$copy_arg = %$args;
+    my $type_name = delete $copy_arg->{type};
     my $type_class = $class->defined_types->{$type_name}
         or croak("$type_name is not defined as type");
-    return $type_class->make_value(%$args);
+
+    return $type_class->make_value(%$copy_arg);
 }
 
 sub _factory_method {
@@ -112,14 +116,14 @@ sub _factory_method {
             next;
         }
         elsif (ref $default eq 'HASH') {
-            my $value = DBIx::DataFactory->make_value_from_type_info($default);
+            my $value = DBIx::DataFactory->_make_value_from_type_info($default);
             $values->{$column} = $value;
             next;
         }
     }
 
     # make sql
-    my ($driver)  = $dsn =~ /^dbi:([^:]+)/;
+    my ($driver)  = $dsn =~ /^dbi:([^:]+)/i;
     my $builder = SQL::Maker->new(driver => $driver);
     my ($sql, @binds) = $builder->insert($table, $values);
 
