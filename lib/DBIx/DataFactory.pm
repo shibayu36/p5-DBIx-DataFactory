@@ -29,11 +29,13 @@ use DBIx::DataFactory::Type;
 sub create_factory_method {
     args my $self,
          my $method   => 'Str',
-         my $dsn      => {isa => 'Str', optional => 1},
          my $table    => 'Str',
+         my $dsn      => {isa => 'Str', optional => 1},
          my $username => {isa => 'Str', optional => 1},
          my $password => {isa => 'Str', optional => 1},
-         my $auto_inserted_columns => {isa => 'HashRef', optional => 1};
+         my $auto_inserted_columns => {
+             isa => 'HashRef', optional => 1, default => {},
+         };
 
     $username = $self->username unless $username;
     $password = $self->password unless $password;
@@ -61,7 +63,7 @@ sub create_factory_method {
                 password       => $password,
                 table          => $table,
                 column_names   => $table_columns,
-                params_default => $auto_inserted_columns,
+                auto_inserted_columns => $auto_inserted_columns,
                 params         => \%args,
             );
         },
@@ -97,8 +99,8 @@ sub _factory_method {
     my $password       = $args{password};
     my $table          = $args{table};
     my $columns        = $args{column_names};
-    my $params_default = $args{params_default};
     my $params         = $args{params};
+    my $auto_inserted_columns = $args{auto_inserted_columns};
 
     my $values = {};
     for my $column (@$columns) {
@@ -110,7 +112,7 @@ sub _factory_method {
         }
 
         # insert setting columns value
-        my $default = $params_default->{$column};
+        my $default = $auto_inserted_columns->{$column};
         if (ref $default eq 'CODE') {
             $values->{$column} = $default->();
             next;
@@ -141,33 +143,196 @@ __END__
 
 =head1 NAME
 
-DBIx::DataFactory - [One line description of module's purpose here]
-
+DBIx::DataFactory - factory method maker for inserting test data
 
 =head1 SYNOPSIS
 
+    # schema
+    CREATE TABLE test_factory (
+      `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+      `int` int,
+      `string` varchar(255),
+      `text` text DEFAULT NULL,
+
+      PRIMARY KEY (id)
+    ) DEFAULT CHARSET=binary;
+
+    # in your t/*.t
     use DBIx::DataFactory;
+    my $factory_maker = DBIx::DataFactory->new({
+        username => 'nobody',
+        password => 'nobody',
+        dsn      => 'dbi:mysql:dbname=test_factory;host=localhost',
+    });
+    $factory_maker->create_factory_method(
+        method   => 'create_factory_data',
+        table    => 'test_factory',
+        auto_inserted_columns => {
+            int => {
+                type => 'Int',
+                size => 8,
+            },
+            string => {
+                type => 'Str',
+                size => 10,
+            },
+        },
+    );
 
-=for author to fill in:
-    Brief code example(s) here showing commonest usage(s).
-    This section will be as far as many users bother reading
-    so make it as educational and exeplary as possible.
+    my $values = create_factory_data(
+        text => 'test text',
+    );
 
+    # will insert following data
+    +----+----------+------------+-----------+
+    | id | int      | string     | text      |
+    +----+----------+------------+-----------+
+    |  1 | 19119247 | 2yPIbqRSrC | test text |
+    +----+----------+------------+-----------+
 
 =head1 DESCRIPTION
 
-=for author to fill in:
-    Write a full description of the module and its features here.
-    Use subsections (=head2, =head3) as appropriate.
+This module helps you to make factory method for inserting data into database.
+
+=head1 METHODS
+
+=head2 $class->new(%args)
+
+Create a new DBIx::DataFactory object.
+
+    my $factory_maker = DBIx::DataFactory->new({
+        username => 'nobody',
+        password => 'nobody',
+        dsn      => 'dbi:mysql:dbname=test_factory;host=localhost',
+    });
+
+Set up initial state by following parameters.
+
+=over 4
+
+=item * username
+
+Database username.
+
+=item * password
+
+Database password
+
+=item *  dsn
+
+Database dsn
+
+=back
+
+=head2 $self->create_factory_method(%args)
+
+This installs the method, which helps inserting data into database, in the caller's package.
+
+    $factory_maker->create_factory_method(
+        method   => 'create_factory_data',
+        table    => 'test_factory',
+        auto_inserted_columns => {
+            int => {
+                type => 'Int',
+                size => 8,
+            },
+            string => {
+                type => 'Str',
+                size => 10,
+            },
+        },
+    );
+
+if this is the case, this make the method named 'create_factory_data'.  you can pass all columns value you defined in schema.
+
+    my $values = create_factory_data(
+        int    => 5,
+        string => 'string',
+        text   => 'test text',
+    );
+
+    # this makes following data.
+    +----+-----+--------+-----------+
+    | id | int | string | text      |
+    +----+-----+--------+-----------+
+    |  1 |  5  | string | test text |
+    +----+-----+--------+-----------+
+
+
+    my $values = create_factory_data;
+
+    # this makes following data
+    +----+----------+------------+------+
+    | id | int      | string     | text |
+    +----+----------+------------+------+
+    |  2 | 59483011 | 9svzODgYyz | NULL |
+    +----+----------+------------+------+
+
+=head3 Parameters
+
+=over 4
+
+=item * method
+
+Required parameter.  method name you want to create.
+
+=item * table
+
+Required parameter.  database table name.
+
+=item * dsn
+
+optional parameter.  database dsn.
+
+=item * username
+
+optional parameter.  database username.
+
+=item * password
+
+optional parameter.  database password.
+
+=item * auto_inserted_columns
+
+optional parameter.  if you have the table column which you want to insert data into automatically by default, you can specify this parameter.
+
+for example, if you have columns named 'int', 'string', and 'text', you can specify following.
+
+    $factory_maker->create_factory_method(
+        method   => 'create_factory_data',
+        table    => 'test_factory',
+        auto_inserted_columns => {
+            int => {
+                type => 'Int',
+                size => 8,
+            },
+            string => {
+                type => 'Str',
+                size => 10,
+            },
+            text => sub { String::Random->new->randregex('[a-z]{50}') }
+        },
+    );
+
+if passed hashref, the method inserts data which is defined in specified type class automatically by default.  see also DBIx::DataFactory::Type.
+
+if passed coderef, the method inserts value which the code returns.
+
+Of cource, if you specify column value in installed method, the setting for the column is not used.
+
+=head2 add_type
+
+you can add type class which define inserting data rule.  See also DBIx::DataFactory::Type.
+
+    DBIx::DataFactory->add_type('DBIx::DataFactory::Type::Test');
 
 =head1 REPOSITORY
 
-https://github.com/shibayu36
+https://github.com/shibayu36/p5-DBIx-DataFactory
 
 =head1 AUTHOR
 
   C<< <shibayu36 {at} gmail.com> >>
-
 
 =head1 LICENCE AND COPYRIGHT
 

@@ -19,7 +19,7 @@ sub startup : Test(startup) {
             'skip-networking' => '',    # no TCP socket
         }
     ) or $self->SKIP_ALL($Test::mysqld::errstr);
-    my $sql = file('test-database.sql')->slurp;
+    my $sql = file(__FILE__)->dir->file('test-database.sql')->slurp;
     my $dbh = DBI->connect(
         $mysqld->dsn() . ';mysql_multi_statements=1',
     );
