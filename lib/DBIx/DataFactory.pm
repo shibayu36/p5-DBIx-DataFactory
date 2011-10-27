@@ -336,6 +336,8 @@ if passed coderef, the method inserts value which the code returns.
 
 Of cource, if you specify column value in installed method, the setting for the column is not used.
 
+=back
+
 =head2 add_type
 
 you can add type class which define the rule of inserting data.  See also DBIx::DataFactory::Type.
