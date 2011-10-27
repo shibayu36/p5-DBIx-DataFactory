@@ -35,6 +35,9 @@ sub create_factory_method {
          my $password => {isa => 'Str', optional => 1},
          my $auto_inserted_columns => {
              isa => 'HashRef', optional => 1, default => {},
+         },
+         my $install_package => {
+             isa => 'Str', optional => 1, default => 'DBIx::DataFactory',
          };
 
     $username = $self->username unless $username;
@@ -53,21 +56,24 @@ sub create_factory_method {
 
     my $table_columns = [map {$_->name} $inspector_table->columns];
 
-    my ($package) = caller;
+    my ($driver) = $dsn =~ /^dbi:([^:]+)/i;
+    my $builder  = SQL::Maker->new(driver => $driver);
+
     Sub::Install::install_sub({
         code => sub {
-            my (%args) = @_;
+            my ($class, %args) = @_;
             return $self->_factory_method(
-                dsn            => $dsn,
+                dbh            => $dbh,
                 username       => $username,
                 password       => $password,
                 table          => $table,
                 column_names   => $table_columns,
+                builder        => $builder,
                 auto_inserted_columns => $auto_inserted_columns,
                 params         => \%args,
             );
         },
-        into => $package,
+        into => $install_package,
         as   => $method,
     });
 
@@ -94,12 +100,13 @@ sub _make_value_from_type_info {
 
 sub _factory_method {
     my ($self, %args) = @_;
-    my $dsn            = $args{dsn};
+    my $dbh            = $args{dbh};
     my $username       = $args{username};
     my $password       = $args{password};
     my $table          = $args{table};
     my $columns        = $args{column_names};
     my $params         = $args{params};
+    my $builder        = $args{builder};
     my $auto_inserted_columns = $args{auto_inserted_columns};
 
     my $values = {};
@@ -125,12 +132,9 @@ sub _factory_method {
     }
 
     # make sql
-    my ($driver)  = $dsn =~ /^dbi:([^:]+)/i;
-    my $builder = SQL::Maker->new(driver => $driver);
     my ($sql, @binds) = $builder->insert($table, $values);
 
     # insert
-    my $dbh = DBI->connect($dsn, $username, $password);
     my $sth = $dbh->prepare($sql);
     $sth->execute(@binds);
 
@@ -181,9 +185,10 @@ DBIx::DataFactory - factory method maker for inserting test data
         },
     );
 
-    my $values = create_factory_data(
+    my $values = $factory_maker->create_factory_data(
         text => 'test text',
     );
+    # or you can use DBIx::DataFactory->create_factory_data()
     my $int  = $values->{int};
     my $text = $values->{text};
 
@@ -194,7 +199,7 @@ DBIx::DataFactory - factory method maker for inserting test data
     # |  1 | 60194256 | 3.03977754238112 | fHt4X0JDr9 | test text |
     # +----+----------+------------------+------------+-----------+
 
-    $values = create_factory_data(
+    $values = $factory_maker->create_factory_data(
         int    => 1,
         string => 'test',
     );
@@ -242,7 +247,7 @@ Database dsn
 
 =head2 $self->create_factory_method(%args)
 
-This installs the method, which helps inserting data into database, in the caller's package.
+This installs the method, which helps inserting data into database, in the DBIx::DataFactory package by default.
 
     $factory_maker->create_factory_method(
         method   => 'create_factory_data',
@@ -261,7 +266,7 @@ This installs the method, which helps inserting data into database, in the calle
 
 if this is the case, this make the method named 'create_factory_data'.  you can pass all columns value you defined in schema.
 
-    my $values = create_factory_data(
+    my $values = $factory_maker->create_factory_data(
         int    => 5,
         string => 'string',
         text   => 'test text',
@@ -275,7 +280,7 @@ if this is the case, this make the method named 'create_factory_data'.  you can 
     +----+-----+--------+-----------+
 
 
-    my $values = create_factory_data;
+    my $values = $factory_maker->create_factory_data;
 
     # this makes following data
     +----+----------+------------+------+
@@ -335,6 +340,16 @@ if passed hashref, the method inserts data which is defined in specified type cl
 if passed coderef, the method inserts value which the code returns.
 
 Of cource, if you specify column value in installed method, the setting for the column is not used.
+
+=item * install_package
+
+optional parameter.  if you want to install the factory method to package except DBIx::DataFactory, please specify.
+
+    $factory_maker->create_factory_method(
+        method          => 'create_factory_data',
+        table           => 'test_factory',
+        install_package => 'test::DBIx::DataFactory',
+    );
 
 =back
 
