@@ -3,9 +3,9 @@ use warnings;
 use inc::Module::Install;
 use Module::Install::AuthorTests;
 
-name     'Test-Factory-DBI';
+name     'DBIx-DataFactory';
 author   'Yuki Shibazaki <shibayu36 {at} gmail.com>';
-all_from 'lib/Test/Factory/DBI.pm';
+all_from 'lib/DBIx/DataFactory.pm';
 
 requires 'Carp';
 requires 'Class::Accessor::Fast';

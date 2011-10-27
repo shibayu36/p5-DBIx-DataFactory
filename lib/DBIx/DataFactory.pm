@@ -151,6 +151,7 @@ DBIx::DataFactory - factory method maker for inserting test data
     CREATE TABLE test_factory (
       `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
       `int` int,
+      `double` double,
       `string` varchar(255),
       `text` text DEFAULT NULL,
 
@@ -172,6 +173,7 @@ DBIx::DataFactory - factory method maker for inserting test data
                 type => 'Int',
                 size => 8,
             },
+            double => sub { rand(100) },
             string => {
                 type => 'Str',
                 size => 10,
@@ -182,13 +184,27 @@ DBIx::DataFactory - factory method maker for inserting test data
     my $values = create_factory_data(
         text => 'test text',
     );
+    my $int  = $values->{int};
+    my $text = $values->{text};
 
     # will insert following data
-    +----+----------+------------+-----------+
-    | id | int      | string     | text      |
-    +----+----------+------------+-----------+
-    |  1 | 19119247 | 2yPIbqRSrC | test text |
-    +----+----------+------------+-----------+
+    # +----+----------+------------------+------------+-----------+
+    # | id | int      | double           | string     | text      |
+    # +----+----------+------------------+------------+-----------+
+    # |  1 | 60194256 | 3.03977754238112 | fHt4X0JDr9 | test text |
+    # +----+----------+------------------+------------+-----------+
+
+    $values = create_factory_data(
+        int    => 1,
+        string => 'test',
+    );
+
+    # will insert following data
+    # +----+------+-----------------+--------+------+
+    # | id | int  | double          | string | text |
+    # +----+------+-----------------+--------+------+
+    # |  2 |    1 | 71.159467713824 | test   | NULL |
+    # +----+------+-----------------+--------+------+
 
 =head1 DESCRIPTION
 
@@ -322,7 +338,7 @@ Of cource, if you specify column value in installed method, the setting for the 
 
 =head2 add_type
 
-you can add type class which define inserting data rule.  See also DBIx::DataFactory::Type.
+you can add type class which define the rule of inserting data.  See also DBIx::DataFactory::Type.
 
     DBIx::DataFactory->add_type('DBIx::DataFactory::Type::Test');
 

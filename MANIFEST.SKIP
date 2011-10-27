@@ -11,7 +11,7 @@ pm_to_blib
 \.tar\.gz
 \.lwpcookies
 cover_db
-Test-Factory-DBI-
+DBIx-DataFactory-
 \.shipit.*
 ^\.#
 ^\.prove
