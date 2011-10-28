@@ -3,7 +3,8 @@ Revision history for DBIx::DataFactory
 0.0.1    Tue Oct 18 08:56:04 2011
         - Initial release
 
-0.0.2
-        - Notice: change interface !
+0.0.2    Fri Oct 28 09:29:13 2011
+        - Notice: change interface!
         - not export factory_method
         - reuse dbh and SQL::Maker instance
+        - no use DBIx::Simple
