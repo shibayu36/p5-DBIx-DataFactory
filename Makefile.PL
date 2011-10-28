@@ -23,7 +23,6 @@ test_requires 'Test::Class';
 test_requires 'Test::TypeConstraints';
 test_requires 'Test::mysqld';
 test_requires 'Path::Class';
-test_requires 'DBIx::Simple';
 
 recursive_author_tests('xt');
 

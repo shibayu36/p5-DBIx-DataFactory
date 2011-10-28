@@ -10,7 +10,6 @@ use Test::mysqld;
 use DBI;
 use DBIx::DataFactory;
 use Path::Class;
-use DBIx::Simple;
 
 sub startup : Test(startup) {
     my $self = shift;
@@ -51,13 +50,14 @@ sub _create_factory_method : Test(11) {
         },
     );
 
-    my $db = DBIx::Simple->connect($self->mysqld->dsn(dbname => 'test_factory'), 'root', '');
+    my $dbh = DBI->connect($self->mysqld->dsn(dbname => 'test_factory'), 'root', '');
 
     # check random value
     my $values = $factory_maker->create_factory_data();
-    my $row = $db->query(
-        'select * from test_factory where `int` = ?', $values->{int}
-    )->hashes->[0];
+    my $row = $dbh->selectrow_hashref(
+        'select * from test_factory where `int` = ?', {}, $values->{int},
+    );
+
     ok $row;
     is $row->{int}, $values->{int};
     ok $row->{int} < 100000000;
@@ -67,9 +67,10 @@ sub _create_factory_method : Test(11) {
 
     # check specified value
     $values = $factory_maker->create_factory_data(string => 'test1', text => 'texttest');
-    $row = $db->query(
-        'select * from test_factory where `int` = ?', $values->{int}
-    )->hashes->[0];
+    $row = $dbh->selectrow_hashref(
+        'select * from test_factory where `int` = ?', {}, $values->{int},
+    );
+
     ok $row;
     is $row->{int}, $values->{int};
     ok $row->{int} < 100000000;
@@ -85,7 +86,7 @@ sub _create_factory_method_specify_sub : Test(6) {
         dsn      => $self->mysqld->dsn(dbname => 'test_factory'),
     });
     $factory_maker->create_factory_method(
-        method   => 'create_factory_data',
+        method   => 'create_factory_data_sub',
         table    => 'test_factory',
         auto_inserted_columns => {
             int => {
@@ -96,12 +97,12 @@ sub _create_factory_method_specify_sub : Test(6) {
         },
     );
 
-    my $db = DBIx::Simple->connect($self->mysqld->dsn(dbname => 'test_factory'), 'root', '');
+    my $dbh = DBI->connect($self->mysqld->dsn(dbname => 'test_factory'), 'root', '');
 
-    my $values = $factory_maker->create_factory_data();
-    my $row = $db->query(
-        'select * from test_factory where `int` = ?', $values->{int}
-    )->hashes->[0];
+    my $values = $factory_maker->create_factory_data_sub();
+    my $row = $dbh->selectrow_hashref(
+        'select * from test_factory where `int` = ?', {}, $values->{int},
+    );
     ok $row;
     is $row->{int}, $values->{int};
     ok $row->{int} < 100000000;
@@ -118,7 +119,7 @@ sub _create_factory_method_install_package : Test(6) {
         dsn      => $self->mysqld->dsn(dbname => 'test_factory'),
     });
     $factory_maker->create_factory_method(
-        method   => 'create_factory_data',
+        method   => 'create_factory_data_package',
         table    => 'test_factory',
         auto_inserted_columns => {
             int => {
@@ -130,12 +131,13 @@ sub _create_factory_method_install_package : Test(6) {
         install_package => 'test::DBIx::DataFactory',
     );
 
-    my $db = DBIx::Simple->connect($self->mysqld->dsn(dbname => 'test_factory'), 'root', '');
+    my $dbh = DBI->connect($self->mysqld->dsn(dbname => 'test_factory'), 'root', '');
 
-    my $values = $self->create_factory_data();
-    my $row = $db->query(
-        'select * from test_factory where `int` = ?', $values->{int}
-    )->hashes->[0];
+    my $values = $self->create_factory_data_package();
+    my $row = $dbh->selectrow_hashref(
+        'select * from test_factory where `int` = ?', {}, $values->{int},
+    );
+
     ok $row;
     is $row->{int}, $values->{int};
     ok $row->{int} < 100000000;
