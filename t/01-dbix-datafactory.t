@@ -28,7 +28,7 @@ sub startup : Test(startup) {
     $self->dbh($dbh);
 }
 
-sub _create_factory_method : Test(11) {
+sub _create_factory_method : Test(12) {
     my $self = shift;
     my $factory_maker = DBIx::DataFactory->new({
         username => 'root',
@@ -59,6 +59,7 @@ sub _create_factory_method : Test(11) {
     );
 
     ok $row;
+    is $row->{id}, $values->{id};
     is $row->{int}, $values->{int};
     ok $row->{int} < 100000000;
     is $row->{string}, $values->{string};
@@ -78,7 +79,7 @@ sub _create_factory_method : Test(11) {
     is $row->{text}, 'texttest';
 }
 
-sub _create_factory_method_specify_sub : Test(6) {
+sub _create_factory_method_specify_sub : Test(7) {
     my $self = shift;
     my $factory_maker = DBIx::DataFactory->new({
         username => 'root',
@@ -104,6 +105,7 @@ sub _create_factory_method_specify_sub : Test(6) {
         'select * from test_factory where `int` = ?', {}, $values->{int},
     );
     ok $row;
+    is $row->{id}, $values->{id};
     is $row->{int}, $values->{int};
     ok $row->{int} < 100000000;
     is $row->{string}, $values->{string};
@@ -111,7 +113,7 @@ sub _create_factory_method_specify_sub : Test(6) {
     ok !$row->{text};
 }
 
-sub _create_factory_method_install_package : Test(6) {
+sub _create_factory_method_install_package : Test(7) {
     my $self = shift;
     my $factory_maker = DBIx::DataFactory->new({
         username => 'root',
@@ -139,6 +141,7 @@ sub _create_factory_method_install_package : Test(6) {
     );
 
     ok $row;
+    is $row->{id}, $values->{id};
     is $row->{int}, $values->{int};
     ok $row->{int} < 100000000;
     is $row->{string}, $values->{string};

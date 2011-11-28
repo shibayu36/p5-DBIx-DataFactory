@@ -55,6 +55,7 @@ sub create_factory_method {
     croak("cannot find table named $table") unless $inspector_table;
 
     my $table_columns = [map {$_->name} $inspector_table->columns];
+    my $primary_keys  = [map {$_->name} $inspector_table->primary_key];
 
     my ($driver) = $dsn =~ /^dbi:([^:]+)/i;
     my $builder  = SQL::Maker->new(driver => $driver);
@@ -64,11 +65,10 @@ sub create_factory_method {
             my ($class, %args) = @_;
             return $self->_factory_method(
                 dbh            => $dbh,
-                username       => $username,
-                password       => $password,
                 table          => $table,
                 column_names   => $table_columns,
                 builder        => $builder,
+                primary_keys   => $primary_keys,
                 auto_inserted_columns => $auto_inserted_columns,
                 params         => \%args,
             );
@@ -101,12 +101,11 @@ sub _make_value_from_type_info {
 sub _factory_method {
     my ($self, %args) = @_;
     my $dbh            = $args{dbh};
-    my $username       = $args{username};
-    my $password       = $args{password};
     my $table          = $args{table};
     my $columns        = $args{column_names};
     my $params         = $args{params};
     my $builder        = $args{builder};
+    my $pk             = $args{primary_keys};
     my $auto_inserted_columns = $args{auto_inserted_columns};
 
     my $values = {};
@@ -138,7 +137,30 @@ sub _factory_method {
     my $sth = $dbh->prepare($sql);
     $sth->execute(@binds);
 
+    # set auto increment value
+    if (scalar(@$pk) == 1 && not defined $values->{$pk->[0]}) {
+        $values->{$pk->[0]} = DBIx::DataFactory->_last_insert_id(
+            $dbh, $builder->{driver}, $table,
+        );
+    }
+
     return $values;
+}
+
+sub _last_insert_id {
+    my ($class, $dbh, $driver, $table_name) = @_;
+
+    if ( $driver eq 'mysql' ) {
+        return $dbh->{mysql_insertid};
+    } elsif ( $driver eq 'Pg' ) {
+        return $dbh->last_insert_id( undef, undef, undef, undef,{ sequence => join( '_', $table_name, 'id', 'seq' ) } );
+    } elsif ( $driver eq 'SQLite' ) {
+        return $dbh->func('last_insert_rowid');
+    } elsif ( $driver eq 'Oracle' ) {
+        return;
+    } else {
+        Carp::croak "Don't know how to get last insert id for $driver";
+    }
 }
 
 1;
