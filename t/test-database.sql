@@ -6,6 +6,7 @@ CREATE TABLE test_factory (
   `int` int,
   `string` varchar(255),
   `text` text DEFAULT NULL,
+  `str_default` varchar(30) DEFAULT 'default test',
 
   PRIMARY KEY (id)
 ) DEFAULT CHARSET=binary;

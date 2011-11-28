@@ -130,7 +130,7 @@ sub _factory_method {
         }
     }
 
-    # make sql
+    # make sql for insert
     my ($sql, @binds) = $builder->insert($table, $values);
 
     # insert
@@ -139,16 +139,27 @@ sub _factory_method {
 
     # set auto increment value
     if (scalar(@$pk) == 1 && not defined $values->{$pk->[0]}) {
-        $values->{$pk->[0]} = DBIx::DataFactory->_last_insert_id(
+        $values->{$pk->[0]} = $self->_last_insert_id(
             $dbh, $builder->{driver}, $table,
         );
+    }
+
+    # refetch data
+    if (scalar(@$pk) == 1) {
+        my ($sql, @binds) = $builder->select(
+            $table,
+            ['*'],
+            { $pk->[0] => $values->{$pk->[0]} },
+        );
+        my $row_hash = $dbh->selectrow_hashref($sql, {}, @binds);
+        return $row_hash if $row_hash;
     }
 
     return $values;
 }
 
 sub _last_insert_id {
-    my ($class, $dbh, $driver, $table_name) = @_;
+    my ($self, $dbh, $driver, $table_name) = @_;
 
     if ( $driver eq 'mysql' ) {
         return $dbh->{mysql_insertid};

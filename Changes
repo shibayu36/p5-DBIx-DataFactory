@@ -11,3 +11,6 @@ Revision history for DBIx::DataFactory
 
 0.0.3    Mon Nov 28 21:46:41 2011
         - set value of auto increment column into return value
+
+0.0.4
+        - refetch when create for setting database default value to return value

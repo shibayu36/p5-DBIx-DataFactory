@@ -28,7 +28,7 @@ sub startup : Test(startup) {
     $self->dbh($dbh);
 }
 
-sub _create_factory_method : Test(12) {
+sub _create_factory_method : Test(14) {
     my $self = shift;
     my $factory_maker = DBIx::DataFactory->new({
         username => 'root',
@@ -65,9 +65,10 @@ sub _create_factory_method : Test(12) {
     is $row->{string}, $values->{string};
     like $row->{string}, qr{[a-zA-Z0-9]{10}};
     ok !$row->{text};
+    is $row->{str_default}, 'default test';
 
     # check specified value
-    $values = $factory_maker->create_factory_data(string => 'test1', text => 'texttest');
+    $values = $factory_maker->create_factory_data(string => 'test1', text => 'texttest', str_default => 'default');
     $row = $dbh->selectrow_hashref(
         'select * from test_factory where `int` = ?', {}, $values->{int},
     );
@@ -77,6 +78,7 @@ sub _create_factory_method : Test(12) {
     ok $row->{int} < 100000000;
     is $row->{string}, 'test1';
     is $row->{text}, 'texttest';
+    is $row->{str_default}, 'default';
 }
 
 sub _create_factory_method_specify_sub : Test(7) {
