@@ -4,7 +4,7 @@ use strict;
 use warnings;
 use Carp;
 
-our $VERSION = '0.0.2';
+our $VERSION = '0.0.3';
 
 use base qw(Class::Data::Inheritable Class::Accessor::Fast);
 __PACKAGE__->mk_classdata('defined_types' => {});
@@ -235,7 +235,7 @@ DBIx::DataFactory - factory method maker for inserting test data
 
 =head1 DESCRIPTION
 
-This module helps you to make factory method for inserting data into database.
+This module helps you to make factory method for inserting data into database.  You can use this for fixture replacement.
 
 =head1 METHODS
 
