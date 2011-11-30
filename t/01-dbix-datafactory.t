@@ -151,6 +151,50 @@ sub _create_factory_method_install_package : Test(7) {
     ok !$row->{text};
 }
 
+sub _create_factory_method_creator : Test(8) {
+    my $self = shift;
+    my $dsn  = $self->mysqld->dsn(dbname => 'test_factory');
+    my $dbh  = DBI->connect($dsn, 'root', '');
+    my $factory_maker = DBIx::DataFactory->new({
+        username => 'root',
+        password => '',
+        dsn      => $dsn,
+    });
+    $factory_maker->create_factory_method(
+        method   => 'create_factory_data_creator',
+        table    => 'test_factory',
+        auto_inserted_columns => {
+            int => {
+                type => 'Int',
+                size => 8,
+            },
+            string => sub { return String::Random->new->randregex('[a-z]{20}') },
+        },
+        creator => sub {
+            my ($values) = @_;
+            my $builder = SQL::Maker->new(driver => 'mysql');
+            my ($sql, @binds) = $builder->insert('test_factory', $values);
+            my $sth = $dbh->prepare($sql);
+            $sth->execute(@binds);
+            return $values;
+        },
+    );
+
+    my $values = $factory_maker->create_factory_data_creator();
+    my $row = $dbh->selectrow_hashref(
+        'select * from test_factory where `int` = ?', {}, $values->{int},
+    );
+
+    ok $row;
+    ok $row->{id};
+    ok !$values->{id};
+    is $row->{int}, $values->{int};
+    ok $row->{int} < 100000000;
+    is $row->{string}, $values->{string};
+    like $row->{string}, qr{[a-z]{20}};
+    ok !$row->{text};
+}
+
 sub _add_type : Test(2) {
     ok (!DBIx::DataFactory->defined_types->{'test'});
     DBIx::DataFactory->add_type('test::DBIx::DataFactory::Type::Test');

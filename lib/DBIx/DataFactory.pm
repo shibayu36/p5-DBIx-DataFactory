@@ -38,6 +38,9 @@ sub create_factory_method {
          },
          my $install_package => {
              isa => 'Str', optional => 1, default => 'DBIx::DataFactory',
+         },
+         my $creator => {
+             isa => 'CodeRef', optional => 1,
          };
 
     $username = $self->username unless $username;
@@ -70,6 +73,7 @@ sub create_factory_method {
                 builder        => $builder,
                 primary_keys   => $primary_keys,
                 auto_inserted_columns => $auto_inserted_columns,
+                creator        => $creator,
                 params         => \%args,
             );
         },
@@ -106,6 +110,7 @@ sub _factory_method {
     my $params         = $args{params};
     my $builder        = $args{builder};
     my $pk             = $args{primary_keys};
+    my $creator        = $args{creator};
     my $auto_inserted_columns = $args{auto_inserted_columns};
 
     my $values = {};
@@ -129,6 +134,28 @@ sub _factory_method {
             next;
         }
     }
+
+    if ($creator) {
+        return $creator->($values);
+    }
+    else {
+        return $self->_insert(
+            builder      => $builder,
+            dbh          => $dbh,
+            table        => $table,
+            primary_keys => $pk,
+            values       => $values,
+        );
+    }
+}
+
+sub _insert {
+    my ($self, %args) = @_;
+    my $builder = $args{builder};
+    my $dbh     = $args{dbh};
+    my $table   = $args{table};
+    my $pk      = $args{primary_keys};
+    my $values  = $args{values};
 
     # make sql for insert
     my ($sql, @binds) = $builder->insert($table, $values);
@@ -382,6 +409,32 @@ optional parameter.  if you want to install the factory method to package except
         method          => 'create_factory_data',
         table           => 'test_factory',
         install_package => 'test::DBIx::DataFactory',
+    );
+
+=item * creator
+
+optional parameter.  if you want to use original method for creating data,  please specify coderef.
+
+DBIx::DataFactory passes values for inserting to code.  the method created by create_factory_method returns values which passed coderef returns.
+
+this is probably useful when you use ORM and set up trigger, or when you want to use blessed value as return value.
+
+For example,
+
+    $factory_maker->create_factory_method(
+        method          => 'create_factory_data',
+        table           => 'test_factory',
+        creator => sub {
+            my ($values) = @_;
+
+            my $db = DBIx::Simple->connect(
+                'dbi:mysql:test_factory', 'root', '',
+            ); # your setting
+            $db->abstract = SQL::Abstract->new;
+
+            my $result = $db->insert('test_factory', $values);
+            return $result;  # this is used for return value of create_factory_data
+        },
     );
 
 =back
