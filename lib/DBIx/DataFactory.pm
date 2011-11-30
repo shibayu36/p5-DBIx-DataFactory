@@ -273,7 +273,7 @@ DBIx::DataFactory - factory method maker for inserting test data
 
 =head1 DESCRIPTION
 
-This module helps you to make factory method for inserting data into database.  You can use this for fixture replacement.
+This module helps you to make factory method for inserting data into database.  You can use this as fixture replacement.
 
 =head1 METHODS
 
