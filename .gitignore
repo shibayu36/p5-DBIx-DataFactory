@@ -10,3 +10,4 @@ nytprof.out
 MANIFEST.bak
 *.sw[po]
 \.prove
+\.shipit
