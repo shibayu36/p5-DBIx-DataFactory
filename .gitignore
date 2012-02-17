@@ -11,3 +11,4 @@ MANIFEST.bak
 *.sw[po]
 \.prove
 \.shipit
+MYMETA\.*

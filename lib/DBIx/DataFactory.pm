@@ -9,7 +9,7 @@ our $VERSION = '0.0.4';
 use base qw(Class::Data::Inheritable Class::Accessor::Fast);
 __PACKAGE__->mk_classdata('defined_types' => {});
 __PACKAGE__->mk_accessors(qw(
-    username password dsn
+    username password dsn dbh connect_attr
 ));
 
 __PACKAGE__->add_type('DBIx::DataFactory::Type::Int');
@@ -33,6 +33,10 @@ sub create_factory_method {
          my $dsn      => {isa => 'Str', optional => 1},
          my $username => {isa => 'Str', optional => 1},
          my $password => {isa => 'Str', optional => 1},
+         my $dbh      => {isa => 'Object', optional => 1},
+         my $connect_attr => {
+             isa => 'HashRef', optional => 1,
+         },
          my $auto_inserted_columns => {
              isa => 'HashRef', optional => 1, default => {},
          },
@@ -46,11 +50,13 @@ sub create_factory_method {
     $username = $self->username unless $username;
     $password = $self->password unless $password;
     $dsn      = $self->dsn      unless $dsn;
-    unless (defined $username && defined $password && defined $dsn) {
-        croak('username, password and dsn for database are all required');
+    $dbh      = $self->dbh      unless $dbh;
+    unless ((defined $username && defined $password && defined $dsn) || $dbh) {
+        croak('either username, password and dsn for database, or dbh are required');
     }
 
-    my $dbh = DBI->connect($dsn, $username, $password);
+    $connect_attr = $self->connect_attr || {} unless $connect_attr;
+    $dbh ||= DBI->connect($dsn, $username, $password, $connect_attr);
     my $inspector = DBIx::Inspector->new(dbh => $dbh)
         or croak('cannot connect database');
 
@@ -60,8 +66,7 @@ sub create_factory_method {
     my $table_columns = [map {$_->name} $inspector_table->columns];
     my $primary_keys  = [map {$_->name} $inspector_table->primary_key];
 
-    my ($driver) = $dsn =~ /^dbi:([^:]+)/i;
-    my $builder  = SQL::Maker->new(driver => $driver);
+    my $builder  = SQL::Maker->new(driver => $dbh->{Driver}->{Name});
 
     Sub::Install::install_sub({
         code => sub {
@@ -281,11 +286,23 @@ This module helps you to make factory method for inserting data into database.  
 
 Create a new DBIx::DataFactory object.
 
+    # set up by username, password, and dsn
     my $factory_maker = DBIx::DataFactory->new({
         username => 'nobody',
         password => 'nobody',
         dsn      => 'dbi:mysql:dbname=test_factory;host=localhost',
     });
+
+    # or set up by db handler
+    my $dbh = DBI->connect(
+        'dbi:mysql:dbname=test_factory;host=localhost',
+        'nobody',
+        'nobody',
+    );
+    my $factory_maker = DBIx::DataFactory->new({
+        dbh => $dbh,
+    });
+
 
 Set up initial state by following parameters.
 
@@ -299,9 +316,13 @@ Database username.
 
 Database password
 
-=item *  dsn
+=item * dsn
 
 Database dsn
+
+=item * dbh
+
+Database handler
 
 =back
 

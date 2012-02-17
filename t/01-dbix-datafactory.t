@@ -6,6 +6,7 @@ use base qw(Test::Class Class::Accessor::Fast);
 __PACKAGE__->mk_accessors(qw(mysqld dbh));
 
 use Test::More;
+use Test::Exception;
 use Test::mysqld;
 use DBI;
 use DBIx::DataFactory;
@@ -26,6 +27,26 @@ sub startup : Test(startup) {
 
     $self->mysqld($mysqld);
     $self->dbh($dbh);
+}
+
+sub _create_factory_method_die : Test(1) {
+    my $factory_maker = DBIx::DataFactory->new;
+    dies_ok {
+        $factory_maker->create_factory_method(
+            method   => 'create_factory_data',
+            table    => 'test_factory',
+            auto_inserted_columns => {
+                int => {
+                    type => 'Int',
+                    size => 8,
+                },
+                string => {
+                    type => 'Str',
+                    size => 10,
+                },
+            },
+        );
+    };
 }
 
 sub _create_factory_method : Test(14) {
@@ -193,6 +214,117 @@ sub _create_factory_method_creator : Test(8) {
     is $row->{string}, $values->{string};
     like $row->{string}, qr{[a-z]{20}};
     ok !$row->{text};
+}
+
+sub _create_factory_method_dbh : Test(14) {
+    my $self = shift;
+    my $dsn  = $self->mysqld->dsn(dbname => 'test_factory');
+    my $dbh  = DBI->connect($dsn, 'root', '');
+    my $factory_maker = DBIx::DataFactory->new({
+        dbh => $dbh,
+    });
+    $factory_maker->create_factory_method(
+        method   => 'create_factory_data_dbh',
+        table    => 'test_factory',
+        auto_inserted_columns => {
+            int => {
+                type => 'Int',
+                size => 8,
+            },
+            string => {
+                type => 'Str',
+                size => 10,
+            },
+        },
+    );
+
+    # check random value
+    my $values = $factory_maker->create_factory_data_dbh();
+    my $row = $dbh->selectrow_hashref(
+        'select * from test_factory where `int` = ?', {}, $values->{int},
+    );
+
+    ok $row;
+    is $row->{id}, $values->{id};
+    is $row->{int}, $values->{int};
+    ok $row->{int} < 100000000;
+    is $row->{string}, $values->{string};
+    like $row->{string}, qr{[a-zA-Z0-9]{10}};
+    ok !$row->{text};
+    is $row->{str_default}, 'default test';
+
+    # check specified value
+    $values = $factory_maker->create_factory_data_dbh(string => 'test1', text => 'texttest', str_default => 'default');
+    $row = $dbh->selectrow_hashref(
+        'select * from test_factory where `int` = ?', {}, $values->{int},
+    );
+
+    ok $row;
+    is $row->{int}, $values->{int};
+    ok $row->{int} < 100000000;
+    is $row->{string}, 'test1';
+    is $row->{text}, 'texttest';
+    is $row->{str_default}, 'default';
+}
+
+sub _create_factory_method_connect_attr : Test(14) {
+    my $self = shift;
+    my $factory_maker = DBIx::DataFactory->new({
+        username => 'root',
+        password => '',
+        dsn      => $self->mysqld->dsn(dbname => 'test_factory'),
+        connect_attr => {
+            mysql_enable_utf8 => 1,
+            on_connect_do     => [
+                "SET NAMES 'utf8'",
+                "SET CHARACTER SET 'utf8'"
+            ],
+        },
+    });
+    $factory_maker->create_factory_method(
+        method   => 'create_factory_data_connect_attr',
+        table    => 'test_factory',
+        auto_inserted_columns => {
+            int => {
+                type => 'Int',
+                size => 8,
+            },
+            string => {
+                type => 'Str',
+                size => 10,
+            },
+        },
+    );
+
+    my $dbh = DBI->connect($self->mysqld->dsn(dbname => 'test_factory'), 'root', '');
+
+    # check random value
+    my $values = $factory_maker->create_factory_data_connect_attr();
+    my $row = $dbh->selectrow_hashref(
+        'select * from test_factory where `int` = ?', {}, $values->{int},
+    );
+
+    ok $row;
+    is $row->{id}, $values->{id};
+    is $row->{int}, $values->{int};
+    ok $row->{int} < 100000000;
+    is $row->{string}, $values->{string};
+    like $row->{string}, qr{[a-zA-Z0-9]{10}};
+    ok !$row->{text};
+    is $row->{str_default}, 'default test';
+
+    # check specified value
+    $values = $factory_maker->create_factory_data_connect_attr(string => 'test1', text => 'texttest', str_default => 'default');
+    $row = $dbh->selectrow_hashref(
+        'select * from test_factory where `int` = ?', {}, $values->{int},
+    );
+
+    ok $row;
+    is $row->{int}, $values->{int};
+    ok $row->{int} < 100000000;
+    is $row->{string}, 'test1';
+    is $row->{text}, 'texttest';
+    is $row->{str_default}, 'default';
 }
 
 sub _add_type : Test(2) {
