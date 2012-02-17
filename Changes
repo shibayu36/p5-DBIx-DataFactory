@@ -15,3 +15,6 @@ Revision history for DBIx::DataFactory
 0.0.4    Wed Nov 30 14:55:58 2011
         - refetch when create for setting database default value to return value
         - add parameter named creator for using original method for creating data
+
+0.0.5    Fri Feb 17 16:35:26 2012
+        - add dbh and connect_attr parameters

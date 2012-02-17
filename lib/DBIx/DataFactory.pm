@@ -4,7 +4,7 @@ use strict;
 use warnings;
 use Carp;
 
-our $VERSION = '0.0.4';
+our $VERSION = '0.0.5';
 
 use base qw(Class::Data::Inheritable Class::Accessor::Fast);
 __PACKAGE__->mk_classdata('defined_types' => {});
