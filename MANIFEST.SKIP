@@ -17,3 +17,5 @@ DBIx-DataFactory-
 ^\.prove
 ^\.gitignore$
 MYMETA
+^local/
+^carton\.lock$
