@@ -12,3 +12,4 @@ MANIFEST.bak
 \.prove
 \.shipit
 MYMETA\.*
+/local/
